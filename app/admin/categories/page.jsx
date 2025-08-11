@@ -7,7 +7,7 @@ export default function CategoriesPage() {
 
   // جلب الأقسام من السيرفر
   const fetchCategories = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/categories`);
+    const res = await fetch('/api/categories');
     const data = await res.json();
     setCategories(data);
   };
