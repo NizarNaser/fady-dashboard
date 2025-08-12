@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-
   const [form, setForm] = useState({
     name: '',
     price: '',
@@ -14,20 +13,17 @@ export default function ProductsPage() {
     files: [],
     previewImages: [],
   });
-
   const [editingId, setEditingId] = useState(null);
 
-  // ✅ جلب الأصناف والفئات
+  // جلب البيانات
   const fetchProducts = async () => {
     const res = await fetch('/api/products');
-    const data = await res.json();
-    setProducts(data);
+    setProducts(await res.json());
   };
 
   const fetchCategories = async () => {
     const res = await fetch('/api/categories');
-    const data = await res.json();
-    setCategories(data);
+    setCategories(await res.json());
   };
 
   useEffect(() => {
@@ -35,79 +31,41 @@ export default function ProductsPage() {
     fetchCategories();
   }, []);
 
-  // ✅ رفع الصور
+  // رفع الملفات
   const uploadFiles = async () => {
     const formData = new FormData();
     (form.files || []).forEach((file) => formData.append('files', file));
-  
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
-  
-    if (!res.ok) {
-      console.error('Upload failed');
-      return [];
-    }
-  
-    const data = await res.json();
-  
-    if (!data.urls || !Array.isArray(data.urls)) {
-      console.error('Upload response is invalid:', data);
-      return [];
-    }
-  
-    return data.urls; // ✅ الحل هنا
-  };
-  
 
-  // ✅ إرسال النموذج
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    return Array.isArray(data.urls) ? data.urls : [];
+  };
+
+  // إرسال البيانات
   const handleSubmit = async () => {
     let uploadedUrls = form.images;
+    if (form.files.length > 0) uploadedUrls = await uploadFiles();
 
-    if (form.files && form.files.length > 0) {
-      uploadedUrls = await uploadFiles();
-    }
-
-    const method = editingId ? 'PUT' : 'POST';
-    const url = '/api/products';
-
-    const body = {
-      name: form.name,
-      price: parseFloat(form.price),
-      category: form.category,
-      images: uploadedUrls,
-      ...(editingId && { _id: editingId }),
-    };
-
-    await fetch(url, {
-      method,
+    await fetch('/api/products', {
+      method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        name: form.name,
+        price: parseFloat(form.price),
+        category: form.category,
+        images: uploadedUrls,
+        ...(editingId && { _id: editingId }),
+      }),
     });
 
-    setForm({
-      name: '',
-      price: '',
-      category: '',
-      images: [],
-      files: [],
-      previewImages: [],
-    });
-
+    setForm({ name: '', price: '', category: '', images: [], files: [], previewImages: [] });
     setEditingId(null);
     fetchProducts();
   };
 
-  // ✅ حذف صنف
-  const deleteProduct = async (id) => {
-    await fetch(`/api/products?id=${id}`, {
-      method: 'DELETE',
-    });
-    fetchProducts();
-  };
-
-  // ✅ اختيار صنف للتعديل
+  // تعديل
   const editProduct = (p) => {
     setForm({
       name: p.name,
@@ -120,21 +78,26 @@ export default function ProductsPage() {
     setEditingId(p._id);
   };
 
-  // ✅ معاينة الصور
+  // حذف
+  const deleteProduct = async (id) => {
+    await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+    fetchProducts();
+  };
+
+  // اختيار ملفات
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     const previews = files.map((file) => URL.createObjectURL(file));
-
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      previewImages: [...(prev.previewImages || []), ...previews],
-      files: [...(prev.files || []), ...files],
+      previewImages: [...prev.previewImages, ...previews],
+      files: [...prev.files, ...files],
     }));
   };
 
-  // ✅ حذف صورة قبل الحفظ
+  // حذف صورة قبل الحفظ
   const removeImage = (index) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       previewImages: prev.previewImages.filter((_, i) => i !== index),
       files: prev.files.filter((_, i) => i !== index),
@@ -142,109 +105,125 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="p-4 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">{editingId ? 'تعديل الصنف' : 'صنف جديد'}</h1>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="bg-white p-6 rounded-xl shadow-md mb-8">
+        <h1 className="text-2xl font-bold mb-6">
+          {editingId ? 'تعديل الصنف' : 'إضافة صنف جديد'}
+        </h1>
 
-      <div className="grid gap-4">
-        <input
-          type="text"
-          placeholder="اسم الصنف"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="border p-2 rounded"
-        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <input
+            type="text"
+            placeholder="اسم الصنف"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        <input
-          type="number"
-          placeholder="السعر"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-          className="border p-2 rounded"
-        />
+          <input
+            type="number"
+            placeholder="السعر"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            className="border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        <select
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-          className="border p-2 rounded"
-        >
-          <option value="">اختر الفئة</option>
-          {categories.map((cat) => (
-            <option key={cat._id} value={cat._id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+          <select
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+            className="border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">اختر الفئة</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
 
-        <input type="file" multiple onChange={handleFileChange} />
-
-        {/* ✅ عرض الصور المؤقتة */}
-        <div className="flex gap-2">
-          {form.previewImages.map((img, idx) => (
-            <div key={idx} className="relative">
-              <img src={img} className="w-24 h-24 object-cover rounded" />
-              <button
-                type="button"
-                onClick={() => removeImage(idx)}
-                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            className="border p-3 rounded-lg"
+          />
         </div>
+
+        {/* الصور */}
+        {form.previewImages.length > 0 && (
+          <div className="flex gap-3 flex-wrap mt-4">
+            {form.previewImages.map((img, idx) => (
+              <div key={idx} className="relative w-24 h-24">
+                <img
+                  src={img}
+                  className="w-full h-full object-cover rounded-lg border"
+                />
+                <button
+                  onClick={() => removeImage(idx)}
+                  className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <button
           onClick={handleSubmit}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 hover:cursor-pointer"
+          className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
         >
           {editingId ? 'تحديث' : 'إضافة'}
         </button>
       </div>
 
-      {/* ✅ قائمة الأصناف */}
-      <table className="w-full border mt-10">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 border">الاسم</th>
-            <th className="p-2 border">السعر</th>
-            <th className="p-2 border">الصنف</th>
-            <th className="p-2 border">صورة</th>
-            <th className="p-2 border">إجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((p) => (
-            <tr key={p._id} className="text-center">
-              <td className="border p-2">{p.name}</td>
-              <td className="border p-2">{p.price}</td>
-              <td className="border p-2">{p.category?.name || 'بدون'}</td>
-              <td className="border p-2">
-                {p.images?.[0] && (
-                  <img
-                    src={p.images[0]}
-                    alt={p.name}
-                    className="w-16 h-16 object-cover mx-auto rounded"
-                  />
-                )}
-              </td>
-              <td className="border p-2 space-x-2">
-                <button
-                  onClick={() => editProduct(p)}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 hover:cursor-pointer"
-                >
-                  تعديل
-                </button>
-                <button
-                  onClick={() => deleteProduct(p._id)}
-                  className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 hover:cursor-pointer"
-                >
-                  حذف
-                </button>
-              </td>
+      {/* جدول */}
+      <div className="bg-white p-6 rounded-xl shadow-md">
+        <h2 className="text-xl font-semibold mb-4">قائمة الأصناف</h2>
+        <table className="w-full border-collapse overflow-hidden rounded-lg">
+          <thead>
+            <tr className="bg-gray-100 text-gray-700">
+              <th className="p-3 border">الاسم</th>
+              <th className="p-3 border">السعر</th>
+              <th className="p-3 border">الفئة</th>
+              <th className="p-3 border">صورة</th>
+              <th className="p-3 border">إجراءات</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {products.map((p) => (
+              <tr key={p._id} className="text-center border-t hover:bg-gray-50">
+                <td className="p-3 border">{p.name}</td>
+                <td className="p-3 border">{p.price}</td>
+                <td className="p-3 border">{p.category?.name || 'بدون'}</td>
+                <td className="p-3 border">
+                  {p.images?.[0] && (
+                    <img
+                      src={p.images[0]}
+                      alt={p.name}
+                      className="w-16 h-16 object-cover mx-auto rounded-lg border"
+                    />
+                  )}
+                </td>
+                <td className="p-3 border space-x-2">
+                  <button
+                    onClick={() => editProduct(p)}
+                    className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600"
+                  >
+                    تعديل
+                  </button>
+                  <button
+                    onClick={() => deleteProduct(p._id)}
+                    className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
+                  >
+                    حذف
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
