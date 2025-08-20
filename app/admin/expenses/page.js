@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiPrinter, FiTrash2, FiPlus } from "react-icons/fi";
+import { FiPrinter, FiTrash2 } from "react-icons/fi";
 
 export default function ExpensePage() {
   const [products, setProducts] = useState([]);
@@ -12,23 +12,26 @@ export default function ExpensePage() {
   const [selectedProduct, setSelectedProduct] = useState('all');
   const [printJS, setPrintJS] = useState(null);
 
+  // تحميل print-js ديناميكيًا (عميل فقط)
   useEffect(() => {
     import('print-js').then((module) => {
       setPrintJS(() => module.default);
     });
   }, []);
 
+  // جلب المنتجات
   const fetchProducts = async () => {
     try {
       const res = await fetch('/api/products');
       if (!res.ok) return setProducts([]);
       const data = await res.json();
-      setProducts(data);
+      setProducts(Array.isArray(data) ? data : []);
     } catch {
       setProducts([]);
     }
   };
 
+  // جلب الصادرات (يفضل أن يكون فيها populate('product'))
   const fetchExpense = async () => {
     try {
       const res = await fetch('/api/expenses');
@@ -37,7 +40,7 @@ export default function ExpensePage() {
         return setExpense([]);
       }
       const data = await res.json();
-      setExpense(data);
+      setExpense(Array.isArray(data) ? data : []);
     } catch {
       toast.error('حدث خطأ أثناء جلب الصادرات');
       setExpense([]);
@@ -49,19 +52,29 @@ export default function ExpensePage() {
     fetchExpense();
   }, []);
 
-  const filteredExpense = expense.filter((expense) => {
-    const expenseDate = new Date(expense.date);
+  // تصفية الصادرات
+  const filteredExpense = expense.filter((exp) => {
+    const expenseDate = exp?.date ? new Date(exp.date) : null;
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
 
-    const isWithinDate = (!from || expenseDate >= from) && (!to || expenseDate <= to);
-    const isProductMatch = selectedProduct === 'all' || expense.product._id === selectedProduct;
+    const isWithinDate =
+      (!from || (expenseDate && expenseDate >= from)) &&
+      (!to || (expenseDate && expenseDate <= to));
+
+    const isProductMatch =
+      selectedProduct === 'all' || exp?.product?._id === selectedProduct; // ← حماية
 
     return isWithinDate && isProductMatch;
   });
 
-  const totalExpenseAmount = filteredExpense.reduce((sum, expense) => sum + expense.totalPrice, 0);
+  // إجمالي الصادرات
+  const totalExpenseAmount = filteredExpense.reduce(
+    (sum, exp) => sum + (Number(exp?.totalPrice) || 0),
+    0
+  );
 
+  // إضافة عملية شراء (صادر)
   const addToExpense = async (productId) => {
     if (!productId) {
       toast.error('معرف الصنف غير صالح');
@@ -92,12 +105,13 @@ export default function ExpensePage() {
     }
   };
 
+  // حذف عملية
   const handleDelete = async (id) => {
     if (!window.confirm('هل أنت متأكد من الحذف؟')) return;
     try {
       const res = await fetch(`/api/expenses?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setExpense((prev) => prev.filter((expense) => expense._id !== id));
+        setExpense((prev) => prev.filter((exp) => exp._id !== id));
         toast.success('تم الحذف بنجاح');
       } else {
         toast.error('فشل في الحذف');
@@ -107,9 +121,14 @@ export default function ExpensePage() {
     }
   };
 
+  // طباعة
   const handlePrint = () => {
     if (!printJS) {
       toast.error('مكتبة الطباعة غير جاهزة بعد');
+      return;
+    }
+    if (filteredExpense.length === 0) {
+      toast.error('لا توجد بيانات للطباعة');
       return;
     }
     printJS({
@@ -136,25 +155,25 @@ export default function ExpensePage() {
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm">
       <h1 className="text-3xl font-bold mb-6 border-b pb-3">إدارة الصادرات</h1>
-{/* قائمة المنتجات */}
-<div className="mb-8">
-  <h2 className="text-xl font-semibold mb-4">اختر المنتج</h2>
-  
-  <div className="flex gap-4 items-center">
-    <select
-      className="p-3 border rounded-lg flex-1 focus:outline-none focus:ring-2 focus:ring-green-500"
-      onChange={(e) => addToExpense(e.target.value)}
-    >
-      <option value="">-- اختر المنتج --</option>
-      {products.map((product) => (
-        <option key={product._id} value={product._id}>
-          {product.name} — €{product.price.toFixed(2)}
-        </option>
-      ))}
-    </select>
-  </div>
-</div>
 
+      {/* اختيار منتج للإضافة */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">اختر المنتج</h2>
+        <div className="flex gap-4 items-center">
+          <select
+            className="p-3 border rounded-lg flex-1 focus:outline-none focus:ring-2 focus:ring-green-500"
+            onChange={(e) => addToExpense(e.target.value)}
+          >
+            <option value="">-- اختر المنتج --</option>
+            {products.map((product) => (
+              <option key={product?._id} value={product?._id}>
+                {product?.name ?? 'غير معروف'} — €
+                {(Number(product?.price) || 0).toFixed(2)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* الفلاتر */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6 flex flex-wrap gap-4 items-end">
@@ -185,7 +204,9 @@ export default function ExpensePage() {
           >
             <option value="all">الكل</option>
             {products.map((p) => (
-              <option key={p._id} value={p._id}>{p.name}</option>
+              <option key={p?._id} value={p?._id}>
+                {p?.name ?? 'غير معروف'}
+              </option>
             ))}
           </select>
         </div>
@@ -204,7 +225,9 @@ export default function ExpensePage() {
           {fromDate && <p>من: {new Date(fromDate).toLocaleDateString('ar-EG')}</p>}
           {toDate && <p>إلى: {new Date(toDate).toLocaleDateString('ar-EG')}</p>}
           {selectedProduct !== 'all' && (
-            <p>الصنف: {products.find((p) => p._id === selectedProduct)?.name || 'غير معروف'}</p>
+            <p>
+              الصنف: {products.find((p) => p?._id === selectedProduct)?.name || 'غير معروف'}
+            </p>
           )}
         </div>
 
@@ -225,16 +248,18 @@ export default function ExpensePage() {
             </thead>
             <tbody>
               {filteredExpense.map((exp) => (
-                <tr key={exp._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border-b">{exp.product.name}</td>
-                  <td className="px-4 py-2 border-b">{exp.quantity}</td>
-                  <td className="px-4 py-2 border-b">€{exp.totalPrice.toFixed(2)}</td>
+                <tr key={exp?._id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 border-b">{exp?.product?.name ?? 'غير معروف'}</td>
+                  <td className="px-4 py-2 border-b">{Number(exp?.quantity) || 0}</td>
                   <td className="px-4 py-2 border-b">
-                    {new Date(exp.date).toLocaleDateString('ar-EG')}
+                    €{(Number(exp?.totalPrice) || 0).toFixed(2)}
+                  </td>
+                  <td className="px-4 py-2 border-b">
+                    {exp?.date ? new Date(exp.date).toLocaleDateString('ar-EG') : '--'}
                   </td>
                   <td className="px-4 py-2 border-b no-print text-center">
                     <button
-                      onClick={() => handleDelete(exp._id)}
+                      onClick={() => handleDelete(exp?._id)}
                       className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition"
                     >
                       <FiTrash2 /> حذف
