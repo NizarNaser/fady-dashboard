@@ -60,7 +60,7 @@ export default function DashboardLayout({ children }) {
 
       {/* الشريط الجانبي */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-gray-900 text-white p-5 space-y-6 z-50 transform transition-transform duration-300 ease-in-out
+        className={`fixed top-0 left-0 h-screen w-100 bg-gray-900 text-white p-5 space-y-6 z-50 transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:static md:h-screen md:flex-shrink-0 shadow-lg`}
       >
