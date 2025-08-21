@@ -37,7 +37,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm">
-      <h2 className="text-3xl font-bold mb-6 border-b pb-3">إدارة الأقسام</h2>
+      <h2 className="text-3xl font-bold mb-6 border-b pb-3">Abteilungsleitung</h2>
 
       {/* إضافة قسم */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -45,14 +45,14 @@ export default function CategoriesPage() {
           type="text"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="اسم القسم"
+          placeholder="Abteilungsname"
           className="p-3 border rounded-lg flex-1 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         />
         <button
           onClick={addCategory}
           className="flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-3 rounded-lg transition"
         >
-          <FiPlus size={18} /> إضافة
+          <FiPlus size={18} /> Zusatz
         </button>
       </div>
 
@@ -61,8 +61,8 @@ export default function CategoriesPage() {
         <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
           <thead className="bg-gray-100">
             <tr>
-              <th className="p-3 text-left border-b">اسم القسم</th>
-              <th className="p-3 text-center border-b">إجراءات</th>
+              <th className="p-3 text-left border-b">Abteilungsname</th>
+              <th className="p-3 text-center border-b">Verfahren</th>
             </tr>
           </thead>
           <tbody>
@@ -83,7 +83,7 @@ export default function CategoriesPage() {
             ) : (
               <tr>
                 <td colSpan="2" className="p-4 text-center text-gray-500">
-                  لا توجد أقسام مضافة بعد
+                  Noch keine Abschnitte hinzugefügt
                 </td>
               </tr>
             )}

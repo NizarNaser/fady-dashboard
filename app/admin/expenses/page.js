@@ -36,13 +36,13 @@ export default function ExpensePage() {
     try {
       const res = await fetch('/api/expenses');
       if (!res.ok) {
-        toast.error('فشل في جلب الصادرات');
+        toast.error("Fehler beim Abrufen der Ausgaben");
         return setExpense([]);
       }
       const data = await res.json();
       setExpense(Array.isArray(data) ? data : []);
     } catch {
-      toast.error('حدث خطأ أثناء جلب الصادرات');
+      toast.error("Fehler beim Abrufen der Ausgaben");
       setExpense([]);
     }
   };
@@ -77,12 +77,12 @@ export default function ExpensePage() {
   // إضافة عملية شراء (صادر)
   const addToExpense = async (productId) => {
     if (!productId) {
-      toast.error('معرف الصنف غير صالح');
+      toast.error("Ungültige Artikel-ID");
       return;
     }
-    const quantity = parseInt(prompt('أدخل الكمية:'), 10);
+    const quantity = parseInt(prompt('Menge eingeben:'), 10);
     if (!quantity || quantity <= 0) {
-      toast.error('يرجى إدخال كمية صالحة');
+      toast.error("Bitte geben Sie eine gültige Menge ein");
       return;
     }
 
@@ -94,41 +94,41 @@ export default function ExpensePage() {
       });
 
       if (!res.ok) {
-        toast.error('فشل في إضافة عملية الشراء');
+        toast.error("Fehler beim Hinzufügen des Kaufs");
         return;
       }
 
-      toast.success('تمت إضافة عملية الشراء بنجاح');
+      toast.success("Kauf erfolgreich hinzugefügt");
       await fetchExpense();
     } catch {
-      toast.error('حدث خطأ أثناء إضافة الشراء');
+      toast.error("Fehler beim Hinzufügen des Kaufs");
     }
   };
 
   // حذف عملية
   const handleDelete = async (id) => {
-    if (!window.confirm('هل أنت متأكد من الحذف؟')) return;
+    if (!window.confirm("Sind Sie sicher, dass Sie löschen möchten?")) return;
     try {
       const res = await fetch(`/api/expenses?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
         setExpense((prev) => prev.filter((exp) => exp._id !== id));
-        toast.success('تم الحذف بنجاح');
+        toast.success("Erfolgreich gelöscht");
       } else {
-        toast.error('فشل في الحذف');
+        toast.error("Fehler beim Löschen");
       }
     } catch {
-      toast.error('حدث خطأ أثناء الحذف');
+      toast.error("Beim Löschen ist ein Fehler aufgetreten");
     }
   };
 
   // طباعة
   const handlePrint = () => {
     if (!printJS) {
-      toast.error('مكتبة الطباعة غير جاهزة بعد');
+      toast.error("Druckbibliothek noch nicht bereit");
       return;
     }
     if (filteredExpense.length === 0) {
-      toast.error('لا توجد بيانات للطباعة');
+      toast.error("Keine Daten zum Drucken");
       return;
     }
     printJS({
@@ -154,20 +154,20 @@ export default function ExpensePage() {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm">
-      <h1 className="text-3xl font-bold mb-6 border-b pb-3">إدارة الصادرات</h1>
+      <h1 className="text-3xl font-bold mb-6 border-b pb-3"> Ausgabenverwaltung</h1>
 
       {/* اختيار منتج للإضافة */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">اختر المنتج</h2>
+        <h2 className="text-xl font-semibold mb-4">Produkt auswählen </h2>
         <div className="flex gap-4 items-center">
           <select
             className="p-3 border rounded-lg flex-1 focus:outline-none focus:ring-2 focus:ring-green-500"
             onChange={(e) => addToExpense(e.target.value)}
           >
-            <option value="">-- اختر المنتج --</option>
+            <option value="">-- Produkt auswählen  --</option>
             {products.map((product) => (
               <option key={product?._id} value={product?._id}>
-                {product?.name ?? 'غير معروف'} — €
+                {product?.name ?? 'Unbekannt '} — €
                 {(Number(product?.price) || 0).toFixed(2)}
               </option>
             ))}
@@ -178,7 +178,7 @@ export default function ExpensePage() {
       {/* الفلاتر */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6 flex flex-wrap gap-4 items-end">
         <div>
-          <label className="block text-sm font-medium">من</label>
+          <label className="block text-sm font-medium">Von</label>
           <input
             type="date"
             value={fromDate}
@@ -187,7 +187,7 @@ export default function ExpensePage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">إلى</label>
+          <label className="block text-sm font-medium">Bis</label>
           <input
             type="date"
             value={toDate}
@@ -196,16 +196,16 @@ export default function ExpensePage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">الصنف</label>
+          <label className="block text-sm font-medium">Artikel</label>
           <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
             className="border px-3 py-2 rounded-lg focus:ring-2 focus:ring-yellow-400"
           >
-            <option value="all">الكل</option>
+            <option value="all">Alle</option>
             {products.map((p) => (
               <option key={p?._id} value={p?._id}>
-                {p?.name ?? 'غير معروف'}
+                {p?.name ?? ' Unbekannt'}
               </option>
             ))}
           </select>
@@ -214,42 +214,42 @@ export default function ExpensePage() {
           onClick={handlePrint}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
         >
-          <FiPrinter /> طباعة
+          <FiPrinter /> Drucken 
         </button>
       </div>
 
       {/* جدول الصادرات */}
       <div id="printable-content">
         <div className="mb-4">
-          <h3 className="text-lg font-bold">تقرير الصادرات</h3>
-          {fromDate && <p>من: {new Date(fromDate).toLocaleDateString('ar-EG')}</p>}
-          {toDate && <p>إلى: {new Date(toDate).toLocaleDateString('ar-EG')}</p>}
+          <h3 className="text-lg font-bold">Ausgabenbericht </h3>
+          {fromDate && <p>Von: {new Date(fromDate).toLocaleDateString('ar-EG')}</p>}
+          {toDate && <p>Bis: {new Date(toDate).toLocaleDateString('ar-EG')}</p>}
           {selectedProduct !== 'all' && (
             <p>
-              الصنف: {products.find((p) => p?._id === selectedProduct)?.name || 'غير معروف'}
+              Artikel: {products.find((p) => p?._id === selectedProduct)?.name || 'Unbekannt '}
             </p>
           )}
         </div>
 
         <h2 className="text-lg font-bold mb-3">
-          إجمالي الصادرات: €{totalExpenseAmount.toFixed(2)}
+          Gesamtausgaben : €{totalExpenseAmount.toFixed(2)}
         </h2>
 
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border border-gray-200 rounded-lg">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-4 py-2 border-b text-left">الصنف</th>
-                <th className="px-4 py-2 border-b text-left">الكمية</th>
-                <th className="px-4 py-2 border-b text-left">الإجمالي (€)</th>
-                <th className="px-4 py-2 border-b text-left">التاريخ</th>
-                <th className="px-4 py-2 border-b text-left no-print">الإجراء</th>
+                <th className="px-4 py-2 border-b text-left">Artikel</th>
+                <th className="px-4 py-2 border-b text-left">Menge</th>
+                <th className="px-4 py-2 border-b text-left">Gesamt (€)</th>
+                <th className="px-4 py-2 border-b text-left">das Datum</th>
+                <th className="px-4 py-2 border-b text-left no-print">Verfahren</th>
               </tr>
             </thead>
             <tbody>
               {filteredExpense.map((exp) => (
                 <tr key={exp?._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border-b">{exp?.product?.name ?? 'غير معروف'}</td>
+                  <td className="px-4 py-2 border-b">{exp?.product?.name ?? ' Unbekannt'}</td>
                   <td className="px-4 py-2 border-b">{Number(exp?.quantity) || 0}</td>
                   <td className="px-4 py-2 border-b">
                     €{(Number(exp?.totalPrice) || 0).toFixed(2)}
@@ -262,7 +262,7 @@ export default function ExpensePage() {
                       onClick={() => handleDelete(exp?._id)}
                       className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition"
                     >
-                      <FiTrash2 /> حذف
+                      <FiTrash2 /> löschen
                     </button>
                   </td>
                 </tr>
@@ -270,7 +270,7 @@ export default function ExpensePage() {
               {filteredExpense.length === 0 && (
                 <tr>
                   <td colSpan="5" className="p-4 text-center text-gray-500">
-                    لا توجد بيانات
+                    Keine Daten
                   </td>
                 </tr>
               )}

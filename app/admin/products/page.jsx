@@ -108,13 +108,13 @@ export default function ProductsPage() {
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="bg-white p-6 rounded-xl shadow-md mb-8">
         <h1 className="text-2xl font-bold mb-6">
-          {editingId ? 'تعديل الصنف' : 'إضافة صنف جديد'}
+          {editingId ? 'Element bearbeiten' : "Neues Element hinzufügen"}
         </h1>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <input
             type="text"
-            placeholder="اسم الصنف"
+            placeholder="Artikelname"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -122,7 +122,7 @@ export default function ProductsPage() {
 
           <input
             type="number"
-            placeholder="السعر"
+            placeholder="der Preis"
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
             className="border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -133,7 +133,7 @@ export default function ProductsPage() {
             onChange={(e) => setForm({ ...form, category: e.target.value })}
             className="border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">اختر الفئة</option>
+            <option value="">Kategorie auswählen</option>
             {categories.map((cat) => (
               <option key={cat._id} value={cat._id}>
                 {cat.name}
@@ -173,21 +173,21 @@ export default function ProductsPage() {
           onClick={handleSubmit}
           className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
         >
-          {editingId ? 'تحديث' : 'إضافة'}
+          {editingId ? 'aktualisieren' : 'Zusatz'}
         </button>
       </div>
 
       {/* جدول */}
       <div className="bg-white p-6 rounded-xl shadow-md">
-        <h2 className="text-xl font-semibold mb-4">قائمة الأصناف</h2>
+        <h2 className="text-xl font-semibold mb-4">Liste der Artikel</h2>
         <table className="w-full border-collapse overflow-hidden rounded-lg">
           <thead>
             <tr className="bg-gray-100 text-gray-700">
-              <th className="p-3 border">الاسم</th>
-              <th className="p-3 border">السعر</th>
-              <th className="p-3 border">الفئة</th>
-              <th className="p-3 border">صورة</th>
-              <th className="p-3 border">إجراءات</th>
+              <th className="p-3 border">der Name</th>
+              <th className="p-3 border">der Preis</th>
+              <th className="p-3 border">Kategorie</th>
+              <th className="p-3 border">Bild</th>
+              <th className="p-3 border">Verfahren</th>
             </tr>
           </thead>
           <tbody>
@@ -195,7 +195,7 @@ export default function ProductsPage() {
               <tr key={p._id} className="text-center border-t hover:bg-gray-50">
                 <td className="p-3 border">{p.name}</td>
                 <td className="p-3 border">{p.price}</td>
-                <td className="p-3 border">{p.category?.name || 'بدون'}</td>
+                <td className="p-3 border">{p.category?.name || 'ohne'}</td>
                 <td className="p-3 border">
                   {p.images?.[0] && (
                     <img
@@ -210,14 +210,12 @@ export default function ProductsPage() {
                     onClick={() => editProduct(p)}
                     className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600"
                   >
-                    تعديل
-                  </button>
+                    Änderung                  </button>
                   <button
                     onClick={() => deleteProduct(p._id)}
                     className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
                   >
-                    حذف
-                  </button>
+                    löschen                  </button>
                 </td>
               </tr>
             ))}

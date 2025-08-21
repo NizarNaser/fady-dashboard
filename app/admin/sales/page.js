@@ -100,13 +100,13 @@ export default function ProductsPage() {
   return (
     <div className="bg-white shadow rounded-xl p-6 space-y-6">
       <h1 className="text-3xl font-bold text-gray-800 border-b pb-3">
-        {editingId ? '✏️ تعديل الصنف' : '➕ إضافة صنف جديد'}
+        {editingId ? '✏️  Produkt bearbeiten' : '➕ Neues Produkt hinzufügen  '}
       </h1>
 
       <div className="grid gap-4">
         <input
           type="text"
-          placeholder="اسم الصنف"
+          placeholder="Produktname "
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           className="border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500"
@@ -114,7 +114,7 @@ export default function ProductsPage() {
 
         <input
           type="number"
-          placeholder="السعر"
+          placeholder="Preis"
           value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
           className="border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500"
@@ -125,7 +125,7 @@ export default function ProductsPage() {
           onChange={(e) => setForm({ ...form, category: e.target.value })}
           className="border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">اختر الفئة</option>
+          <option value="">Kategorie wählen </option>
           {categories.map((cat) => (
             <option key={cat._id} value={cat._id}>{cat.name}</option>
           ))}
@@ -156,18 +156,18 @@ export default function ProductsPage() {
           onClick={handleSubmit}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-semibold"
         >
-          {editingId ? '💾 تحديث' : '➕ إضافة'}
+          {editingId ? '💾 Aktualisieren' : '➕ Hinzufügen'}
         </button>
       </div>
 
       <table className="w-full mt-10 border-collapse shadow-sm">
         <thead>
           <tr className="bg-gray-100 text-gray-700">
-            <th className="p-3 border">الاسم</th>
-            <th className="p-3 border">السعر</th>
-            <th className="p-3 border">الصنف</th>
-            <th className="p-3 border">صورة</th>
-            <th className="p-3 border">إجراءات</th>
+            <th className="p-3 border">Name</th>
+            <th className="p-3 border">Preis</th>
+            <th className="p-3 border">Kategorie</th>
+            <th className="p-3 border">Bild</th>
+            <th className="p-3 border">Aktionen</th>
           </tr>
         </thead>
         <tbody>
@@ -175,7 +175,7 @@ export default function ProductsPage() {
             <tr key={p._id} className="text-center hover:bg-gray-50">
               <td className="border p-3">{p.name}</td>
               <td className="border p-3">{p.price}</td>
-              <td className="border p-3">{p.category?.name || 'بدون'}</td>
+              <td className="border p-3">{p.category?.name || 'Keine'}</td>
               <td className="border p-3">
                 {p.images?.[0] && (
                   <img
@@ -190,13 +190,12 @@ export default function ProductsPage() {
                   onClick={() => editProduct(p)}
                   className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
                 >
-                  تعديل
-                </button>
+                  Bearbeiten ✏️ </button>
                 <button
                   onClick={() => deleteProduct(p._id)}
                   className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
                 >
-                  حذف
+                  Löschen ❌
                 </button>
               </td>
             </tr>

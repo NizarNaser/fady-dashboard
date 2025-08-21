@@ -12,25 +12,31 @@ export default function DashboardLayout({ children }) {
 
   const menuItems = [
     {
-      section: "الأقسام و الأصناف",
+      section: "Abschnitte und Kategorien",
       links: [
-        { href: "/admin", label: "الرئيسية", icon: <FiHome /> },
-        { href: "/admin/categories", label: "الأقسام", icon: <FiTag /> },
-        { href: "/admin/products", label: "الأصناف", icon: <FiBox /> },
+        { href: "/admin", label: "Startseite", icon: <FiHome /> },
+        { href: "/admin/categories", label: "Kategorien", icon: <FiTag /> },
+        { href: "/admin/products", label: "Produkte", icon: <FiBox /> },
       ],
     },
     {
-      section: "الواردات",
-      links: [{ href: "/admin/sales", label: "صفحة الواردات", icon: <FiDownload /> }],
+      section: "Importe",
+      links: [{ href: "/admin/sales", label: "Seite Importe", icon: <FiDownload /> }],
     },
     {
-      section: "الصادرات",
-      links: [{ href: "/admin/expenses", label: "صفحة الصادرات", icon: <FiUpload /> }],
+      section: "Exporte",
+      links: [{ href: "/admin/expenses", label: "Seite Exporte", icon: <FiUpload /> }],
     },
     {
-      section: "الأرباح والمبيعات",
-      links: [{ href: "/admin/stats", label: "صفحة الأرباح والمبيعات", icon: <FiBarChart2 /> }],
+      section: "Gewinne und Umsätze",
+      links: [{ href: "/admin/stats", label: "Seite Gewinne und Verkäufe", icon: <FiBarChart2 /> }],
     },
+    {
+      section: "Ausgaben nach Kategorie ",
+      links: [{ href: "/admin/category-stats", label: "Ausgabenseite nach Kategorie ", icon: <FiBarChart2 /> }],
+    },
+
+
   ];
 
   return (
@@ -39,7 +45,7 @@ export default function DashboardLayout({ children }) {
       <button
         onClick={() => setSidebarOpen(true)}
         className="fixed top-4 left-4 z-50 md:hidden bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-lg shadow-lg"
-        aria-label="فتح القائمة الجانبية"
+        aria-label="Öffnen Sie das Seitenmenü"
       >
         <FiMenu size={22} />
       </button>
@@ -60,10 +66,10 @@ export default function DashboardLayout({ children }) {
       >
         {/* زر إغلاق للموبايل */}
         <div className="flex justify-between items-center md:hidden">
-          <h2 className="text-xl font-bold">لوحة التحكم</h2>
+          <h2 className="text-xl font-bold">Control Panel</h2>
           <button
             onClick={() => setSidebarOpen(false)}
-            aria-label="إغلاق القائمة الجانبية"
+            aria-label="Schließen Sie das Seitenmenü"
             className="text-white hover:text-yellow-400"
           >
             <FiX size={24} />
@@ -72,8 +78,7 @@ export default function DashboardLayout({ children }) {
 
         {/* العنوان */}
         <h2 className="hidden md:block text-2xl font-bold mb-4 border-b border-gray-700 pb-2">
-          لوحة التحكم
-        </h2>
+          Control Panel        </h2>
 
         {/* القائمة */}
         <nav className="space-y-6">

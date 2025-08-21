@@ -22,9 +22,9 @@ export default function Home() {
   if (!session) {
     return (
       <div className="flex flex-col items-center mt-20">
-        <h1 className="text-2xl mb-4">مرحبا بك 👋</h1>
+        <h1 className="text-2xl mb-4">Willkommen 👋</h1>
         <button onClick={() => signIn("google")} className="bg-blue-500 text-white px-4 py-2 rounded">
-          تسجيل الدخول بـ Google
+          Einloggen mit Google
         </button>
       </div>
     );
@@ -32,18 +32,17 @@ export default function Home() {
   
   return (
     <div className="text-center mt-20">
-      <h2 className="text-xl mb-2">مرحباً، {session.user.name}</h2>
+      <h2 className="text-xl mb-2">Willkommen, {session.user.name}</h2>
       <p>{session.user.email}</p>
       <button onClick={() => signOut()} className="mt-4 bg-red-500 text-white px-4 py-2 rounded">
-        تسجيل الخروج
+Abmelden
       </button>
       {
         
 
         session.user.email === adminEmail && (
           <button onClick={() => router.push('/admin')} className="mt-4 bg-red-500 text-white px-4 py-2 rounded">
-            لوحة التحكم
-          </button>
+Control Panel          </button>
         )
       }
 

@@ -43,13 +43,13 @@ export default function StatsPage() {
       setChartData(Object.values(combined).map((d) => ({ ...d, profit: d.sales - d.expenses })));
     } catch (error) {
       console.error(error);
-      toast.error("حدث خطأ أثناء جلب البيانات");
+      toast.error("Beim Abrufen der Daten ist ein Fehler aufgetreten.");
     }
   };
 
   const exportToExcel = () => {
     if (chartData.length === 0) {
-      toast.error("لا توجد بيانات للتصدير");
+      toast.error("Keine Exportdaten");
       return;
     }
     const ws = XLSX.utils.json_to_sheet(chartData);
@@ -60,11 +60,11 @@ export default function StatsPage() {
 
   const handlePrint = () => {
     if (!printJS) {
-      toast.error("مكتبة الطباعة غير جاهزة بعد.");
+      toast.error("Die Printbibliothek ist noch nicht fertig.");
       return;
     }
     if (chartData.length === 0) {
-      toast.error("لا توجد بيانات للطباعة");
+      toast.error("Keine Daten zum Drucken");
       return;
     }
     printJS({
@@ -101,36 +101,36 @@ export default function StatsPage() {
       {/* البطاقات */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 no-print">
         <div className="bg-green-50 border border-green-200 p-4 rounded-lg shadow-sm">
-          <h3 className="text-lg font-medium text-green-700">إجمالي المبيعات</h3>
+          <h3 className="text-lg font-medium text-green-700">Gesamtumsatz</h3>
           <p className="text-2xl font-bold mt-1">{totalSales.toFixed(2)} €</p>
         </div>
         <div className="bg-red-50 border border-red-200 p-4 rounded-lg shadow-sm">
-          <h3 className="text-lg font-medium text-red-700">إجمالي المصاريف</h3>
+          <h3 className="text-lg font-medium text-red-700">Gesamtausgaben</h3>
           <p className="text-2xl font-bold mt-1">{totalExpenses.toFixed(2)} €</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg shadow-sm">
-          <h3 className="text-lg font-medium text-blue-700">إجمالي الربح</h3>
+          <h3 className="text-lg font-medium text-blue-700">Gesamtgewinn</h3>
           <p className="text-2xl font-bold mt-1">{totalProfit.toFixed(2)} €</p>
         </div>
       </div>
 
       {/* العنوان + الفلاتر */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 no-print">
-        <h1 className="text-xl font-bold">📊 إحصائيات المبيعات والأرباح</h1>
+        <h1 className="text-xl font-bold">📊 Umsatz- und Gewinnstatistiken</h1>
         <div className="flex gap-2 flex-wrap">
           <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="border rounded px-3 py-1" />
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="border rounded px-3 py-1" />
-          <button onClick={fetchData} className="bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700">عرض</button>
+          <button onClick={fetchData} className="bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700">ein Angebot</button>
           <button onClick={exportToExcel} className="bg-green-600 text-white px-4 py-1.5 rounded hover:bg-green-700">📥 Excel</button>
-          <button onClick={handlePrint} className="bg-purple-600 text-white px-4 py-1.5 rounded hover:bg-purple-700">🖨 طباعة / PDF</button>
+          <button onClick={handlePrint} className="bg-purple-600 text-white px-4 py-1.5 rounded hover:bg-purple-700">🖨 drucken / PDF</button>
         </div>
       </div>
 
       {/* المحتوى القابل للطباعة */}
       <div id="printable-content" className="mt-4">
-        <h2 className="text-lg font-semibold mb-2">تقرير الإحصائيات</h2>
-        {fromDate && <p>من: {new Date(fromDate).toLocaleDateString("ar-EG")}</p>}
-        {toDate && <p>إلى: {new Date(toDate).toLocaleDateString("ar-EG")}</p>}
+        <h2 className="text-lg font-semibold mb-2">Statistikbericht</h2>
+        {fromDate && <p>von: {new Date(fromDate).toLocaleDateString("ar-EG")}</p>}
+        {toDate && <p>bis: {new Date(toDate).toLocaleDateString("ar-EG")}</p>}
 
         {/* الرسم البياني */}
         <div className="h-80 mt-4">
@@ -141,9 +141,9 @@ export default function StatsPage() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="sales" stroke="#16a34a" name="المبيعات" />
-              <Line type="monotone" dataKey="expenses" stroke="#dc2626" name="المصاريف" />
-              <Line type="monotone" dataKey="profit" stroke="#2563eb" name="الأرباح" />
+              <Line type="monotone" dataKey="sales" stroke="#16a34a" name="Verkäufe" />
+              <Line type="monotone" dataKey="expenses" stroke="#dc2626" name="Kosten" />
+              <Line type="monotone" dataKey="profit" stroke="#2563eb" name="Gewinne" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -152,10 +152,10 @@ export default function StatsPage() {
         <table className="w-full mt-6 border border-gray-200 text-sm">
           <thead>
             <tr className="bg-gray-50">
-              <th className="border p-2">التاريخ</th>
-              <th className="border p-2">المبيعات (€)</th>
-              <th className="border p-2">المصاريف (€)</th>
-              <th className="border p-2">الأرباح (€)</th>
+              <th className="border p-2">das Datum</th>
+              <th className="border p-2">Verkäufe (€)</th>
+              <th className="border p-2">Kosten (€)</th>
+              <th className="border p-2">Gewinne (€)</th>
             </tr>
           </thead>
           <tbody>
