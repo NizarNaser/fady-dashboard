@@ -2,17 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiTrash2 } from 'react-icons/fi';
 
 export default function SalesPage() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
-  const [form, setForm] = useState({
-    categoryId: '',
-    productId: '',
-    quantity: 1,
-  });
+  const [form, setForm] = useState({ categoryId: '', productId: '', quantity: 1 });
 
   // جلب الكاتيغوريز
   const fetchCategories = async () => {
@@ -55,33 +50,33 @@ export default function SalesPage() {
 
   // إضافة بيع
   const handleAddSale = async () => {
-    if (!form.productId) return toast.error("Bitte Produkt auswählen");
-    if (!form.quantity || form.quantity <= 0)
-      return toast.error("Bitte eine gültige Menge eingeben");
-
-    const selectedCategory = categories.find(cat => cat._id === form.categoryId);
-    const categoryName = selectedCategory ? selectedCategory.name : '';
+    if (!form.productId) return toast.error("Bitte ein Produkt auswählen");
+    if (!form.quantity || form.quantity <= 0) return toast.error("Bitte eine gültige Menge eingeben");
 
     try {
-      const res = await fetch('/api/sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: form.productId,
           quantity: form.quantity,
-          categoryId: form.categoryId,
+          categoryId: form.categoryId || null,
         }),
       });
-      if (!res.ok) return toast.error("Fehler beim Hinzufügen");
 
       const data = await res.json();
 
-      // إضافة الاسم المختار للكايغوري محليًا
-      setSales(prev => [...prev, { ...data, category: categoryName }]);
-      setForm({ categoryId: '', productId: '', quantity: 1 });
+      if (!res.ok) {
+        console.error("POST /api/sales failed:", data);
+        return toast.error(data.error || "Fehler beim Hinzufügen");
+      }
+
+      setSales(prev => [...prev, data]);
       toast.success("Verkauf erfolgreich hinzugefügt");
-    } catch {
-      toast.error("Fehler beim Hinzufügen");
+      setForm({ categoryId: '', productId: '', quantity: 1 });
+    } catch (error) {
+      console.error("handleAddSale error:", error);
+      toast.error("Es ist ein Fehler aufgetreten");
     }
   };
 
@@ -96,10 +91,15 @@ export default function SalesPage() {
       } else {
         toast.error("Fehler beim Löschen");
       }
-    } catch {
+    } catch (e) {
+      console.error(e);
       toast.error("Fehler beim Löschen");
     }
   };
+
+  const getProductName = (s) => s?.product?.name || 'Keine';
+  const getProductPrice = (s) => s?.product?.price ?? (s.totalPrice / s.quantity) ?? 0;
+  const getCategoryName = (s) => s?.category?.name || 'Keine';
 
   return (
     <div className="bg-white shadow rounded-xl p-6 space-y-6">
@@ -108,31 +108,24 @@ export default function SalesPage() {
       </h1>
 
       <div className="grid gap-4">
-        {/* اختيار الكاتيغوري */}
         <select
           value={form.categoryId}
           onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
           className="border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500"
         >
           <option value="">-- Kategorie wählen --</option>
-          {categories.map((cat) => (
-            <option key={cat._id} value={cat._id}>{cat.name}</option>
-          ))}
+          {categories.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
         </select>
 
-        {/* اختيار المنتج */}
         <select
           value={form.productId}
           onChange={(e) => setForm({ ...form, productId: e.target.value })}
           className="border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500"
         >
           <option value="">-- Produkt wählen --</option>
-          {products.map((p) => (
-            <option key={p._id} value={p._id}>{p.name} — €{p.price}</option>
-          ))}
+          {products.map(p => <option key={p._id} value={p._id}>{p.name} — €{p.price}</option>)}
         </select>
 
-        {/* كمية المنتج */}
         <input
           type="number"
           min={1}
@@ -150,7 +143,6 @@ export default function SalesPage() {
         </button>
       </div>
 
-      {/* جدول المبيعات */}
       <div className="overflow-x-auto">
         <table className="w-full mt-6 border-collapse shadow-sm">
           <thead>
@@ -166,18 +158,16 @@ export default function SalesPage() {
           <tbody>
             {sales.length === 0 && (
               <tr>
-                <td colSpan="6" className="p-4 text-center text-gray-500">
-                  Keine Daten
-                </td>
+                <td colSpan="6" className="p-4 text-center text-gray-500">Keine Daten</td>
               </tr>
             )}
-            {sales.map((s) => (
+            {sales.map(s => (
               <tr key={s._id} className="text-center hover:bg-gray-50">
-                <td className="border p-3">{s.product?.name || 'Keine'}</td>
-                <td className="border p-3">{s.category || 'Keine'}</td>
-                <td className="border p-3">{s.product?.price || 0}€</td>
+                <td className="border p-3">{getProductName(s)}</td>
+                <td className="border p-3">{getCategoryName(s)}</td>
+                <td className="border p-3">{getProductPrice(s).toFixed(2)}€</td>
                 <td className="border p-3">{s.quantity}</td>
-                <td className="border p-3">{s.totalPrice || 0}€</td>
+                <td className="border p-3">{s.totalPrice.toFixed(2)}€</td>
                 <td className="border p-3 space-x-2">
                   <button
                     onClick={() => handleDelete(s._id)}

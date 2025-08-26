@@ -1,43 +1,70 @@
 import { connectDB } from '@/lib/config/mongodb';
 import Expense from '@/lib/models/Expense';
 import Product from '@/lib/models/Product';
-import Category from '@/lib/models/Category'; // ← مهم
+import Category from '@/lib/models/Category';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(req) {
   await connectDB();
-  const expenses = await Expense.find().populate('product');
+
+  const expenses = await Expense.find()
+    .populate('product')
+    .populate('category')
+    .sort({ date: -1 });
+
   return NextResponse.json(expenses);
 }
 
 export async function POST(req) {
-  await connectDB();
-  const { productId, quantity, categoryId } = await req.json();
+  try {
+    await connectDB();
+    const { productId, quantity, categoryId } = await req.json();
 
-  const product = await Product.findById(productId);
-  if (!product) return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+    if (!productId || !quantity || quantity <= 0) {
+      return NextResponse.json({ error: "Produkt und Menge erforderlich" }, { status: 400 });
+    }
 
-  let categoryName = '';
-  if (categoryId) {
-    const category = await Category.findById(categoryId); // ← استدعاء الكاتيغوري
-    if (category) categoryName = category.name;
+    const product = await Product.findById(productId).populate('category');
+    if (!product) return NextResponse.json({ error: "Produkt nicht gefunden" }, { status: 404 });
+
+    let categoryToStore = null;
+    if (categoryId) {
+      const cat = await Category.findById(categoryId);
+      if (cat) categoryToStore = cat._id;
+    } else if (product.category) {
+      categoryToStore = product.category._id;
+    }
+
+    const totalPrice = (Number(product.price) || 0) * Number(quantity);
+
+    const expense = await Expense.create({
+      product: product._id,
+      quantity,
+      totalPrice,
+      ...(categoryToStore && { category: categoryToStore }),
+    });
+
+    const populatedExpense = await Expense.findById(expense._id)
+      .populate('product')
+      .populate('category');
+
+    return NextResponse.json(populatedExpense, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/expenses error:", error);
+    return NextResponse.json({ error: error.message || "Server error" }, { status: 500 });
   }
-
-  const totalPrice = product.price * quantity;
-
-  const expense = await Expense.create({
-    product: productId,
-    quantity,
-    totalPrice,
-    category: categoryName, // ← تخزين اسم الكاتيغوري في قاعدة البيانات
-  });
-
-  return NextResponse.json(expense);
 }
 
 export async function DELETE(req) {
-  await connectDB();
-  const id = new URL(req.url).searchParams.get('id');
-  await Expense.findByIdAndDelete(id);
-  return NextResponse.json({ success: true });
+  try {
+    await connectDB();
+    const id = new URL(req.url).searchParams.get('id');
+    if (!id) return NextResponse.json({ error: "ID fehlt" }, { status: 400 });
+
+    await Expense.findByIdAndDelete(id);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE /api/expenses error:", error);
+    return NextResponse.json({ error: "Fehler beim Löschen" }, { status: 500 });
+  }
 }

@@ -11,9 +11,7 @@ export default function StatsPage() {
   const [printJS, setPrintJS] = useState(null);
 
   useEffect(() => {
-    import("print-js").then((module) => {
-      setPrintJS(() => module.default);
-    });
+    import("print-js").then((module) => setPrintJS(() => module.default));
   }, []);
 
   const fetchData = async () => {
@@ -26,8 +24,8 @@ export default function StatsPage() {
 
       // دمج البيانات مع تحديد النوع
       const combinedData = [
-        ...salesData.map(s => ({ ...s, type: 'sale', totalPrice: s.totalPrice })),
-        ...expensesData.map(e => ({ ...e, type: 'expense', totalPrice: e.totalPrice }))
+        ...salesData.map(s => ({ ...s, type: 'sale' })),
+        ...expensesData.map(e => ({ ...e, type: 'expense' }))
       ];
 
       setChartData(combinedData);
@@ -38,25 +36,24 @@ export default function StatsPage() {
   };
 
   const exportToExcel = () => {
-    if (chartData.length === 0) {
-      toast.error("Keine Exportdaten");
-      return;
-    }
-    const ws = XLSX.utils.json_to_sheet(chartData);
+    if (chartData.length === 0) return toast.error("Keine Exportdaten");
+    const ws = XLSX.utils.json_to_sheet(chartData.map(d => ({
+      Datum: new Date(d.date).toLocaleDateString(),
+      Typ: d.type === 'sale' ? 'Verkauf' : 'Ausgabe',
+      Produkt: d.product?.name || '-',
+      Kategorie: d.category?.name || '-',
+      Preis: d.product?.price || 0,
+      Menge: d.quantity,
+      Gesamt: d.totalPrice
+    })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Statistics");
     XLSX.writeFile(wb, "stats.xlsx");
   };
 
   const handlePrint = () => {
-    if (!printJS) {
-      toast.error("Die Printbibliothek ist noch nicht fertig.");
-      return;
-    }
-    if (chartData.length === 0) {
-      toast.error("Keine Daten zum Drucken");
-      return;
-    }
+    if (!printJS) return toast.error("Die Printbibliothek ist noch nicht fertig.");
+    if (chartData.length === 0) return toast.error("Keine Daten zum Drucken");
     printJS({
       printable: "printable-content",
       type: "html",
@@ -163,7 +160,7 @@ export default function StatsPage() {
                 <td className="border p-2">{new Date(row.date).toLocaleDateString()}</td>
                 <td className="border p-2">{row.type === 'sale' ? 'Verkauf' : 'Ausgabe'}</td>
                 <td className="border p-2">{row.product?.name || '-'}</td>
-                <td className="border p-2">{row.category || '-'}</td>
+                <td className="border p-2">{row.category?.name || '-'}</td>
                 <td className="border p-2">{row.product?.price || 0}</td>
                 <td className="border p-2">{row.quantity}</td>
                 <td className="border p-2">{row.totalPrice}</td>
@@ -175,9 +172,7 @@ export default function StatsPage() {
 
       <style jsx global>{`
         @media print {
-          .no-print {
-            display: none !important;
-          }
+          .no-print { display: none !important; }
         }
       `}</style>
     </div>

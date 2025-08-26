@@ -52,16 +52,16 @@ export default function CategoryStatsPage() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  // خريطة منتج -> فئة
+  // خريطة منتج -> فئة (من populated category)
   const productToCategory = useMemo(() => {
     const map = new Map();
     for (const p of products) {
-      const catId = typeof p.category === "object" ? p.category?._id : p.category;
-      const catName = typeof p.category === "object" ? p.category?.name : categories.find((c) => c._id === catId)?.name || "Ohne";
-      map.set(p._id, { catId: catId || "uncategorized", catName: catName || "Ohne", productName: p.name });
+      const catId = p.category?._id || "uncategorized";
+      const catName = p.category?.name || "Ohne";
+      map.set(p._id, { catId, catName, productName: p.name });
     }
     return map;
-  }, [products, categories]);
+  }, [products]);
 
   // تجميع حسب الفئة
   const allCategoryRows = useMemo(() => {
@@ -71,21 +71,17 @@ export default function CategoryStatsPage() {
     }
 
     for (const s of sales) {
-      const prodId = typeof s.product === "object" ? s.product?._id : s.product;
-      const link = productToCategory.get(prodId);
-      const key = link?.catId || "uncategorized";
-      const name = link?.catName || categories.find((c) => c._id === key)?.name || "Ohne";
-      const cur = agg.get(key) || { categoryId: key, categoryName: name, sales: 0, expenses: 0 };
-      agg.set(key, { ...cur, sales: (cur.sales || 0) + (Number(s.totalPrice) || 0) });
+      const catId = s.category?._id || (productToCategory.get(s.product?._id)?.catId || "uncategorized");
+      const catName = s.category?.name || (productToCategory.get(s.product?._id)?.catName || "Ohne");
+      const cur = agg.get(catId) || { categoryId: catId, categoryName: catName, sales: 0, expenses: 0 };
+      agg.set(catId, { ...cur, sales: (cur.sales || 0) + (Number(s.totalPrice) || 0) });
     }
 
     for (const ex of expenses) {
-      const prodId = typeof ex.product === "object" ? ex.product?._id : ex.product;
-      const link = productToCategory.get(prodId);
-      const key = link?.catId || "uncategorized";
-      const name = link?.catName || categories.find((c) => c._id === key)?.name || "Ohne";
-      const cur = agg.get(key) || { categoryId: key, categoryName: name, sales: 0, expenses: 0 };
-      agg.set(key, { ...cur, expenses: (cur.expenses || 0) + (Number(ex.totalPrice) || 0) });
+      const catId = ex.category?._id || (productToCategory.get(ex.product?._id)?.catId || "uncategorized");
+      const catName = ex.category?.name || (productToCategory.get(ex.product?._id)?.catName || "Ohne");
+      const cur = agg.get(catId) || { categoryId: catId, categoryName: catName, sales: 0, expenses: 0 };
+      agg.set(catId, { ...cur, expenses: (cur.expenses || 0) + (Number(ex.totalPrice) || 0) });
     }
 
     return Array.from(agg.values())
@@ -94,35 +90,40 @@ export default function CategoryStatsPage() {
   }, [sales, expenses, productToCategory, categories]);
 
   // تفصيل المنتجات داخل فئة محددة
-  const detailRowsByProduct = useMemo(() => {
-    if (selectedCategory === "all") return [];
-    const prods = products.filter(p => {
-      const catId = typeof p.category === "object" ? p.category?._id : p.category;
-      return catId === selectedCategory;
-    });
-    const map = new Map();
-    for (const p of prods) map.set(p._id, { productId: p._id, productName: p.name, sales: 0, expenses: 0, profit: 0 });
+  
+const detailRowsByProduct = useMemo(() => {
+  if (selectedCategory === "all") return [];
+  // حدد المنتجات التي تنتمي للفئة المحددة (من product.category أو مباشرة)
+  const prods = products.filter(p => (p.category?._id || "uncategorized") === selectedCategory);
+  const map = new Map();
+  for (const p of prods) map.set(p._id, { productId: p._id, productName: p.name, sales: 0, expenses: 0, profit: 0 });
 
-    for (const s of sales) {
-      const prodId = typeof s.product === "object" ? s.product?._id : s.product;
-      if (!map.has(prodId)) continue;
-      const cur = map.get(prodId);
-      cur.sales += Number(s.totalPrice) || 0;
-      map.set(prodId, cur);
-    }
+  // جمع المبيعات
+  for (const s of sales) {
+    const catId = s.category?._id || s.product?.category?._id || "uncategorized";
+    if (catId !== selectedCategory) continue; // تأكد من أنها للفئة المختارة
+    const prodId = s.product?._id || `sale-${s._id}`; // إذا لا يوجد منتج، استخدم معرف فريد
+    if (!map.has(prodId)) map.set(prodId, { productId: prodId, productName: s.product?.name || "Ohne", sales: 0, expenses: 0, profit: 0 });
+    const cur = map.get(prodId);
+    cur.sales += Number(s.totalPrice) || 0;
+    map.set(prodId, cur);
+  }
 
-    for (const ex of expenses) {
-      const prodId = typeof ex.product === "object" ? ex.product?._id : ex.product;
-      if (!map.has(prodId)) continue;
-      const cur = map.get(prodId);
-      cur.expenses += Number(ex.totalPrice) || 0;
-      map.set(prodId, cur);
-    }
+  // جمع النفقات
+  for (const ex of expenses) {
+    const catId = ex.category?._id || ex.product?.category?._id || "uncategorized";
+    if (catId !== selectedCategory) continue;
+    const prodId = ex.product?._id || `exp-${ex._id}`;
+    if (!map.has(prodId)) map.set(prodId, { productId: prodId, productName: ex.product?.name || "Ohne", sales: 0, expenses: 0, profit: 0 });
+    const cur = map.get(prodId);
+    cur.expenses += Number(ex.totalPrice) || 0;
+    map.set(prodId, cur);
+  }
 
-    return Array.from(map.values())
-      .map(r => ({ ...r, profit: (r.sales || 0) - (r.expenses || 0) }))
-      .sort((a,b) => b.profit - a.profit);
-  }, [selectedCategory, products, sales, expenses]);
+  return Array.from(map.values())
+    .map(r => ({ ...r, profit: (r.sales || 0) - (r.expenses || 0) }))
+    .sort((a,b) => b.profit - a.profit);
+}, [selectedCategory, products, sales, expenses]);
 
   const displayedRows = selectedCategory === "all" ? allCategoryRows : detailRowsByProduct;
 
@@ -134,7 +135,7 @@ export default function CategoryStatsPage() {
   }, [displayedRows]);
 
   const exportToExcel = () => {
-    if (!XLSX) { toast.error("xlsx not installiert"); return; }
+    if (!XLSX) { toast.error("xlsx nicht installiert"); return; }
     if (!displayedRows.length) { toast.error("Keine Daten"); return; }
     const sheetData = displayedRows.map(r => ({
       Name: selectedCategory==="all"? r.categoryName : r.productName,
