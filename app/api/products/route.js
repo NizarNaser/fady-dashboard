@@ -63,7 +63,7 @@ export async function POST(req) {
 
   export async function PUT(req) {
     await connectDB();
-    const { _id, name, price, images, category } = await req.json();
+    const { _id, name, price, images} = await req.json();
   
     try {
       const oldProduct = await Product.findById(_id);
@@ -92,7 +92,7 @@ export async function POST(req) {
   
       const updated = await Product.findByIdAndUpdate(
         _id,
-        { name, price, images: newImages, category },
+        { name, price, images: newImages},
         { new: true }
       );
   

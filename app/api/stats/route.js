@@ -18,7 +18,7 @@ export async function GET(req) {
     let from = searchParams.get('from');
     let to = searchParams.get('to');
 
-    // إذا ما فيه تاريخ، نعرض آخر شهر
+    // إذا لم يتم تحديد فترة، نعرض آخر شهر
     if (!from || !to) {
       const now = new Date();
       to = now.toISOString().split('T')[0];
@@ -29,15 +29,15 @@ export async function GET(req) {
 
     await connectDB();
 
-    // جلب المبيعات
+    // جلب المبيعات مع populate للمنتج
     const sales = await Sale.find({
       date: { $gte: new Date(from), $lte: new Date(to) },
-    }).sort({ date: 1 });
+    }).populate('product').sort({ date: 1 });
 
-    // جلب المصروفات
+    // جلب المصروفات مع populate للمنتج إذا أردنا (اختياري)
     const expenses = await Expense.find({
       date: { $gte: new Date(from), $lte: new Date(to) },
-    }).sort({ date: 1 });
+    }).populate('product').sort({ date: 1 });
 
     // تجهيز بيانات الرسم البياني اليومية
     const daysMap = {};
@@ -63,8 +63,10 @@ export async function GET(req) {
       d.profit = d.sales - d.expenses;
     });
 
-    // تحويل البيانات لمصفوفة مرتبة
-    const chartData = Object.values(daysMap).sort((a, b) => new Date(a.date) - new Date(b.date));
+    // تحويل البيانات لمصفوفة مرتبة حسب التاريخ
+    const chartData = Object.values(daysMap).sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
 
     return NextResponse.json(chartData);
   } catch (error) {

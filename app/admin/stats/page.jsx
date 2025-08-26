@@ -5,11 +5,9 @@ import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 
 export default function StatsPage() {
-  const [sales, setSales] = useState([]);
-  const [expenses, setExpenses] = useState([]);
+  const [chartData, setChartData] = useState([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [chartData, setChartData] = useState([]);
   const [printJS, setPrintJS] = useState(null);
 
   useEffect(() => {
@@ -26,21 +24,13 @@ export default function StatsPage() {
       const salesData = await salesRes.json();
       const expensesData = await expensesRes.json();
 
-      setSales(salesData);
-      setExpenses(expensesData);
+      // دمج البيانات مع تحديد النوع
+      const combinedData = [
+        ...salesData.map(s => ({ ...s, type: 'sale', totalPrice: s.totalPrice })),
+        ...expensesData.map(e => ({ ...e, type: 'expense', totalPrice: e.totalPrice }))
+      ];
 
-      const combined = {};
-      salesData.forEach((s) => {
-        const date = new Date(s.date).toLocaleDateString();
-        combined[date] = combined[date] || { date, sales: 0, expenses: 0 };
-        combined[date].sales += s.totalPrice;
-      });
-      expensesData.forEach((e) => {
-        const date = new Date(e.date).toLocaleDateString();
-        combined[date] = combined[date] || { date, sales: 0, expenses: 0 };
-        combined[date].expenses += e.totalPrice;
-      });
-      setChartData(Object.values(combined).map((d) => ({ ...d, profit: d.sales - d.expenses })));
+      setChartData(combinedData);
     } catch (error) {
       console.error(error);
       toast.error("Beim Abrufen der Daten ist ein Fehler aufgetreten.");
@@ -92,9 +82,20 @@ export default function StatsPage() {
     if (fromDate && toDate) fetchData();
   }, [fromDate, toDate]);
 
-  const totalSales = chartData.reduce((acc, curr) => acc + curr.sales, 0);
-  const totalExpenses = chartData.reduce((acc, curr) => acc + curr.expenses, 0);
+  // حساب الإجماليات
+  const totalSales = chartData.filter(d => d.type === 'sale').reduce((acc, curr) => acc + curr.totalPrice, 0);
+  const totalExpenses = chartData.filter(d => d.type === 'expense').reduce((acc, curr) => acc + curr.totalPrice, 0);
   const totalProfit = totalSales - totalExpenses;
+
+  // تجهيز بيانات الرسم البياني اليومي
+  const dailyData = {};
+  chartData.forEach(d => {
+    const day = new Date(d.date).toLocaleDateString();
+    if (!dailyData[day]) dailyData[day] = { date: day, sales: 0, expenses: 0, profit: 0 };
+    if (d.type === 'sale') dailyData[day].sales += d.totalPrice;
+    else dailyData[day].expenses += d.totalPrice;
+  });
+  Object.values(dailyData).forEach(d => d.profit = d.sales - d.expenses);
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-sm">
@@ -114,28 +115,23 @@ export default function StatsPage() {
         </div>
       </div>
 
-      {/* العنوان + الفلاتر */}
+      {/* الفلاتر + أزرار */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 no-print">
         <h1 className="text-xl font-bold">📊 Umsatz- und Gewinnstatistiken</h1>
         <div className="flex gap-2 flex-wrap">
           <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="border rounded px-3 py-1" />
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="border rounded px-3 py-1" />
-          <button onClick={fetchData} className="bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700">ein Angebot</button>
+          <button onClick={fetchData} className="bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700">Filtern</button>
           <button onClick={exportToExcel} className="bg-green-600 text-white px-4 py-1.5 rounded hover:bg-green-700">📥 Excel</button>
           <button onClick={handlePrint} className="bg-purple-600 text-white px-4 py-1.5 rounded hover:bg-purple-700">🖨 drucken / PDF</button>
         </div>
       </div>
 
-      {/* المحتوى القابل للطباعة */}
       <div id="printable-content" className="mt-4">
-        <h2 className="text-lg font-semibold mb-2">Statistikbericht</h2>
-        {fromDate && <p>von: {new Date(fromDate).toLocaleDateString("ar-EG")}</p>}
-        {toDate && <p>bis: {new Date(toDate).toLocaleDateString("ar-EG")}</p>}
-
         {/* الرسم البياني */}
         <div className="h-80 mt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
+            <LineChart data={Object.values(dailyData)}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis />
@@ -152,19 +148,25 @@ export default function StatsPage() {
         <table className="w-full mt-6 border border-gray-200 text-sm">
           <thead>
             <tr className="bg-gray-50">
-              <th className="border p-2">das Datum</th>
-              <th className="border p-2">Verkäufe (€)</th>
-              <th className="border p-2">Kosten (€)</th>
-              <th className="border p-2">Gewinne (€)</th>
+              <th className="border p-2">Datum</th>
+              <th className="border p-2">Typ</th>
+              <th className="border p-2">Produkt</th>
+              <th className="border p-2">Kategorie</th>
+              <th className="border p-2">Preis (€)</th>
+              <th className="border p-2">Menge</th>
+              <th className="border p-2">Gesamt (€)</th>
             </tr>
           </thead>
           <tbody>
             {chartData.map((row, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="border p-2">{row.date}</td>
-                <td className="border p-2">{row.sales}</td>
-                <td className="border p-2">{row.expenses}</td>
-                <td className="border p-2">{row.profit}</td>
+              <tr key={idx} className="hover:bg-gray-50 text-center">
+                <td className="border p-2">{new Date(row.date).toLocaleDateString()}</td>
+                <td className="border p-2">{row.type === 'sale' ? 'Verkauf' : 'Ausgabe'}</td>
+                <td className="border p-2">{row.product?.name || '-'}</td>
+                <td className="border p-2">{row.category || '-'}</td>
+                <td className="border p-2">{row.product?.price || 0}</td>
+                <td className="border p-2">{row.quantity}</td>
+                <td className="border p-2">{row.totalPrice}</td>
               </tr>
             ))}
           </tbody>

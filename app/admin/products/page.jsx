@@ -4,11 +4,9 @@ import { useEffect, useState } from 'react';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({
     name: '',
     price: '',
-    category: '',
     images: [],
     files: [],
     previewImages: [],
@@ -21,14 +19,8 @@ export default function ProductsPage() {
     setProducts(await res.json());
   };
 
-  const fetchCategories = async () => {
-    const res = await fetch('/api/categories');
-    setCategories(await res.json());
-  };
-
   useEffect(() => {
     fetchProducts();
-    fetchCategories();
   }, []);
 
   // رفع الملفات
@@ -43,7 +35,7 @@ export default function ProductsPage() {
     return Array.isArray(data.urls) ? data.urls : [];
   };
 
-  // إرسال البيانات
+  // إرسال البيانات (بدون كاتيغوري)
   const handleSubmit = async () => {
     let uploadedUrls = form.images;
     if (form.files.length > 0) uploadedUrls = await uploadFiles();
@@ -54,23 +46,21 @@ export default function ProductsPage() {
       body: JSON.stringify({
         name: form.name,
         price: parseFloat(form.price),
-        category: form.category,
         images: uploadedUrls,
         ...(editingId && { _id: editingId }),
       }),
     });
 
-    setForm({ name: '', price: '', category: '', images: [], files: [], previewImages: [] });
+    setForm({ name: '', price: '', images: [], files: [], previewImages: [] });
     setEditingId(null);
     fetchProducts();
   };
 
-  // تعديل
+  // تعديل (بدون كاتيغوري)
   const editProduct = (p) => {
     setForm({
       name: p.name,
       price: p.price,
-      category: p.category?._id || '',
       images: p.images || [],
       files: [],
       previewImages: [],
@@ -108,7 +98,7 @@ export default function ProductsPage() {
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="bg-white p-6 rounded-xl shadow-md mb-8">
         <h1 className="text-2xl font-bold mb-6">
-          {editingId ? 'Element bearbeiten' : "Neues Element hinzufügen"}
+          {editingId ? 'Element bearbeiten' : 'Neues Element hinzufügen'}
         </h1>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -128,18 +118,7 @@ export default function ProductsPage() {
             className="border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
-          <select
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="border p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Kategorie auswählen</option>
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          {/* تمت إزالة إدخال الكاتيغوري من الصفحة */}
 
           <input
             type="file"
@@ -154,10 +133,7 @@ export default function ProductsPage() {
           <div className="flex gap-3 flex-wrap mt-4">
             {form.previewImages.map((img, idx) => (
               <div key={idx} className="relative w-24 h-24">
-                <img
-                  src={img}
-                  className="w-full h-full object-cover rounded-lg border"
-                />
+                <img src={img} className="w-full h-full object-cover rounded-lg border" />
                 <button
                   onClick={() => removeImage(idx)}
                   className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600"
@@ -185,7 +161,6 @@ export default function ProductsPage() {
             <tr className="bg-gray-100 text-gray-700">
               <th className="p-3 border">der Name</th>
               <th className="p-3 border">der Preis</th>
-              <th className="p-3 border">Kategorie</th>
               <th className="p-3 border">Bild</th>
               <th className="p-3 border">Verfahren</th>
             </tr>
@@ -195,7 +170,6 @@ export default function ProductsPage() {
               <tr key={p._id} className="text-center border-t hover:bg-gray-50">
                 <td className="p-3 border">{p.name}</td>
                 <td className="p-3 border">{p.price}</td>
-                <td className="p-3 border">{p.category?.name || 'ohne'}</td>
                 <td className="p-3 border">
                   {p.images?.[0] && (
                     <img
@@ -210,12 +184,14 @@ export default function ProductsPage() {
                     onClick={() => editProduct(p)}
                     className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600"
                   >
-                    Änderung                  </button>
+                    Änderung
+                  </button>
                   <button
                     onClick={() => deleteProduct(p._id)}
                     className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
                   >
-                    löschen                  </button>
+                    löschen
+                  </button>
                 </td>
               </tr>
             ))}
